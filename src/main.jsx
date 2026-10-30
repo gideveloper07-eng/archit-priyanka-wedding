@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { CalendarDays, MapPin, Clock3, Heart, MessageCircle, ArrowDown, Sparkles, Copy, Check } from 'lucide-react';
+import { CalendarDays, MapPin, Clock3, Heart, MessageCircle, ArrowDown, Sparkles, Copy, Check, Gift, Flower2, PartyPopper } from 'lucide-react';
 import './styles.css';
 
 const WEDDING_DATE = new Date('2026-11-21T19:00:00+05:30');
@@ -14,6 +14,7 @@ function App() {
   const [attendance, setAttendance] = useState('joyfully-attending');
   const [message, setMessage] = useState('');
   const [copied, setCopied] = useState(false);
+  const [invitationOpened, setInvitationOpened] = useState(false);
 
   function getCountdown() {
     const now = new Date();
@@ -24,6 +25,24 @@ function App() {
     const timer = setInterval(() => setCountdown(getCountdown()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const elements = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) {
+      elements.forEach((element) => element.classList.add('is-visible'));
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.14, rootMargin: '0px 0px -35px 0px' });
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [invitationOpened]);
 
   const formattedDate = new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' }).format(WEDDING_DATE);
   const rsvpText = `Wedding RSVP — Archit ji & Priyanka\nName: ${guestName || 'Guest'}\nResponse: ${attendance === 'joyfully-attending' ? 'Joyfully attending' : 'Regretfully unable to attend'}\nGuests: ${attendance === 'joyfully-attending' ? guestCount : '0'}${message ? `\nMessage: ${message}` : ''}`;
@@ -42,7 +61,27 @@ function App() {
     catch { window.prompt('Copy your invitation text:', text); }
   };
 
+  const petals = Array.from({ length: 14 }, (_, index) => index);
+
   return <main>
+    {!invitationOpened && <div className="invitation-gate" role="dialog" aria-modal="true" aria-label="Open wedding invitation">
+      <div className="gate-glow" />
+      <div className="gate-card">
+        <div className="gate-flourish">❧ ✦ ❧</div>
+        <p className="gate-overline">A WEDDING INVITATION</p>
+        <div className="gate-monogram">A <i>&amp;</i> P</div>
+        <p className="gate-names">Archit ji <span>&amp;</span> Priyanka</p>
+        <p className="gate-date">21 NOVEMBER 2026 · JODHPUR</p>
+        <button className="open-invitation" onClick={() => setInvitationOpened(true)}>
+          <Heart size={15} /> OPEN YOUR INVITATION
+        </button>
+        <p className="gate-hint">A celebration of love, family &amp; forever</p>
+      </div>
+    </div>}
+    <div className="petal-field" aria-hidden="true">
+      {petals.map((petal) => <span className="petal" key={petal} style={{ '--i': petal }} />)}
+    </div>
+    <div className="reading-progress" aria-hidden="true" />
     <section className="hero" id="home">
       <div className="hero-noise" />
       <div className="ornament ornament-top" aria-hidden="true">✦　❧　✦</div>
@@ -64,15 +103,16 @@ function App() {
       <div className="side-label">THE WEDDING CELEBRATION · 2026</div>
     </section>
 
-    <section className="welcome section-pad" id="celebration">
+    <section className="welcome section-pad reveal" id="celebration">
       <div className="section-kicker"><Sparkles size={14}/> THE BEGINNING OF FOREVER</div>
       <h2>A promise of <span>forever</span></h2>
       <p className="welcome-copy">Some moments become memories, and some memories become the beginning of a lifetime. With the blessings of our families, we invite you to join us as we begin our forever together.</p>
       <div className="monogram"><span>A</span><i>&amp;</i><span>P</span><small>21 · 11 · 2026</small></div>
+      <div className="promise-row"><div><Flower2 size={19}/><span>FAMILY</span></div><div><Heart size={19}/><span>LOVE</span></div><div><Gift size={19}/><span>BLESSINGS</span></div></div>
       <p className="blessing">Your presence will make our celebration complete.</p>
     </section>
 
-    <section className="countdown-section section-pad">
+    <section className="countdown-section section-pad reveal">
       <div className="section-kicker">SAVE THE DATE</div>
       <h2>Counting down to <span>our day</span></h2>
       <p className="date-caption">{formattedDate}</p>
@@ -82,11 +122,12 @@ function App() {
       {countdown.passed && <p className="date-caption">The celebration has begun — thank you for being part of our story.</p>}
     </section>
 
-    <section className="event-section section-pad" id="events">
+    <section className="event-section section-pad reveal" id="events">
       <div className="section-kicker">COME CELEBRATE WITH US</div>
       <h2>The wedding <span>details</span></h2>
       <p className="event-intro">Mark your calendar and join us for a day filled with love, laughter, and blessings.</p>
-      <div className="event-card">
+      <div className="event-note-strip"><PartyPopper size={17}/><span>One beautiful day. A lifetime of memories.</span></div>
+      <div className="event-card reveal">
         <div className="event-card-top"><span className="event-symbol"><Heart size={21}/></span><span className="event-tag">THE MAIN CELEBRATION</span></div>
         <h3>Wedding Ceremony</h3>
         <p className="event-script">A new chapter begins</p>
@@ -99,7 +140,7 @@ function App() {
       <a className="outline-link" href="https://www.google.com/maps/search/?api=1&query=Jodhpur%2C%20Rajasthan%2C%20India" target="_blank" rel="noreferrer"><MapPin size={16}/> EXPLORE JODHPUR</a>
     </section>
 
-    <section className="rsvp-section section-pad" id="rsvp">
+    <section className="rsvp-section section-pad reveal" id="rsvp">
       <div className="rsvp-decoration" aria-hidden="true">✦</div>
       <div className="section-kicker">KINDLY REPLY</div>
       <h2>Will you join <span>our celebration?</span></h2>
@@ -120,7 +161,7 @@ function App() {
       </form>
     </section>
 
-    <footer className="footer">
+    <footer className="footer reveal">
       <div className="footer-flourish">❧ ✦ ❧</div>
       <p className="footer-small">WITH LOVE, AND THE BLESSINGS OF OUR FAMILIES</p>
       <div className="footer-names">Archit <span>&amp;</span> Priyanka</div>

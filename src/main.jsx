@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { CalendarDays, MapPin, Clock3, Heart, MessageCircle, ArrowDown, Sparkles, Copy, Check, Gift, Flower2, PartyPopper } from 'lucide-react';
+import { CalendarDays, MapPin, Clock3, Heart, MessageCircle, ArrowDown, Sparkles, Copy, Check, Gift, Flower2, PartyPopper, Volume2, VolumeX } from 'lucide-react';
 import './styles.css';
 
 const WEDDING_DATE = new Date('2026-11-21T19:00:00+05:30');
@@ -15,6 +15,17 @@ function App() {
   const [message, setMessage] = useState('');
   const [copied, setCopied] = useState(false);
   const [invitationOpened, setInvitationOpened] = useState(false);
+  const [musicPlaying, setMusicPlaying] = useState(false);
+  const [musicError, setMusicError] = useState(false);
+  const audioRef = useRef(null);
+
+  async function toggleMusic() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (musicPlaying) { audio.pause(); setMusicPlaying(false); return; }
+    try { await audio.play(); setMusicPlaying(true); setMusicError(false); }
+    catch { setMusicPlaying(false); setMusicError(true); }
+  }
 
   function getCountdown() {
     const now = new Date();
@@ -72,12 +83,19 @@ function App() {
         <div className="gate-monogram">A <i>&amp;</i> P</div>
         <p className="gate-names">Archit ji <span>&amp;</span> Priyanka</p>
         <p className="gate-date">21 NOVEMBER 2026 · JODHPUR</p>
-        <button className="open-invitation" onClick={() => setInvitationOpened(true)}>
+        <button className="open-invitation" onClick={() => { setInvitationOpened(true); if (audioRef.current) { audioRef.current.play().then(() => { setMusicPlaying(true); setMusicError(false); }).catch(() => setMusicError(true)); } }}>
           <Heart size={15} /> OPEN YOUR INVITATION
         </button>
         <p className="gate-hint">A celebration of love, family &amp; forever</p>
       </div>
     </div>}
+    <audio ref={audioRef} src="/audio/wedding-shehnai.mp3" loop preload="none" onError={() => { if (musicPlaying) setMusicPlaying(false); setMusicError(true); }} />
+    <button className={`music-toggle ${musicPlaying ? 'is-playing' : ''}`} onClick={toggleMusic} aria-label={musicPlaying ? 'Pause wedding music' : 'Play wedding music'} title={musicPlaying ? 'Pause wedding music' : 'Play wedding music'}>
+      {musicPlaying ? <Volume2 size={16}/> : <VolumeX size={16}/>}
+      <span>{musicPlaying ? 'MUSIC ON' : 'WEDDING MUSIC'}</span>
+      {musicPlaying && <i className="music-equalizer"><b/><b/><b/></i>}
+    </button>
+    {musicError && <div className="music-hint" role="status">Add your MP3 as <strong>public/audio/wedding-shehnai.mp3</strong> to enable music.</div>}
     <div className="petal-field" aria-hidden="true">
       {petals.map((petal) => <span className="petal" key={petal} style={{ '--i': petal }} />)}
     </div>
